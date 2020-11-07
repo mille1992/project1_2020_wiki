@@ -9,8 +9,9 @@ def list_entries():
     Returns a list of all names of encyclopedia entries.
     """
     _, filenames = default_storage.listdir("entries")
+    # substitute .md with space
     return list(sorted(re.sub(r"\.md$", "", filename)
-                for filename in filenames if filename.endswith(".md")))
+                       for filename in filenames if filename.endswith(".md")))
 
 
 def save_entry(title, content):
@@ -35,3 +36,23 @@ def get_entry(title):
         return f.read().decode("utf-8")
     except FileNotFoundError:
         return None
+
+
+def match_entries(matchInput):
+    """
+    Lists search results that are similar to the input argument.
+    """
+    # get all pages in entries
+    filenames = list_entries()
+
+    # find those entries that matches the input
+    matchedEntries = []
+    for filename in filenames:
+        if re.search(matchInput.lower(), filename.lower()):
+            matchedEntries.append(filename)
+    if matchedEntries == []:
+        return None
+    else:
+        return matchedEntries
+
+    
