@@ -59,6 +59,7 @@ def index(request):
 def entry(request, title):
     content = util.get_entry(title)
     EmptyForm = NewSearchForm()
+    
     if content is not None:
         return render(request, "encyclopedia/entry.html", {
             "entryTitle": title,
@@ -104,7 +105,7 @@ def createNewEntry(request):
             "form": EmptyForm,
             "errorMessage": f" Your entry could not be saved"   
             })
-    # if request method is not POST, render a template to input a new entry
+    # if request method is not POST, render a templated to input a new entry
     else:
         CreateEntryForm = NewCreateEntryForm()
         return render(request, "encyclopedia/createEntry.html",{

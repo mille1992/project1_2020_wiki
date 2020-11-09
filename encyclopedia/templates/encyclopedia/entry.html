@@ -5,8 +5,8 @@
 {% endblock %}
 
 {% block body %}
-
-    <p>
+    <a href="{% url 'encyclopedia:createEntry' %}" class="text-right">Edit this page</a>
+    <p class="text-center">
         {{ entryContent }}
     </p>
 
