@@ -2,6 +2,8 @@ from django.shortcuts import render
 from django import forms
 from . import util
 import random
+import markdown2
+from markdown2 import Markdown
 
 
 class NewSearchForm(forms.Form):
@@ -13,19 +15,12 @@ class NewCreateEntryForm(forms.Form):
     newContent = forms.CharField(label="New entry", widget=forms.Textarea(
         attrs={"rows": 1, "cols": 1, "width": 50}))
 
-
-class NewEditForm(forms.Form):
-    def __init__(self, initialTitle, initialContent):
-        super(NewEditForm, self).__init__(initialTitle, initialContent)
-        newTitle = forms.CharField(label="New title", initial=initialTitle)
-        newContent = forms.CharField(label="New entry", widget=forms.Textarea(
-            attrs={"rows": 1, "cols": 1, "width": 50}))
-
-
 def index(request):
     EmptyForm = NewSearchForm()
     entrylist = util.list_entries()
-    randomEntry = random.choice(entrylist) 
+    randomEntry = random.choice(entrylist)
+    markdowner = Markdown() 
+
     # if the page is called from the Search form
     if request.method == "POST":
         # get form data
@@ -37,6 +32,7 @@ def index(request):
             content = util.get_entry(searchInput)
             # if search input has an exact entry match
             if content is not None:
+                content = markdowner.convert(content)
                 return render(request, "encyclopedia/entry.html", {
                     "entryTitle": searchInput,
                     "entryContent": content,
@@ -81,7 +77,10 @@ def entry(request, title):
     entrylist = util.list_entries()
     EmptyForm = NewSearchForm()
     randomEntry = random.choice(entrylist) 
+    markdowner = Markdown() 
+
     if content is not None:
+        content = markdowner.convert(content)
         return render(request, "encyclopedia/entry.html", {
             "entryTitle": title,
             "entryContent": content,
@@ -92,7 +91,7 @@ def entry(request, title):
         return render(request, "encyclopedia/error.html", {
             "title": title,
             "form": EmptyForm,
-            "errorMessage": f" Your search: {{title}}, did not yield any result. Please try another search input.",
+            "errorMessage": f" Your search: <b><u>{ title }</b></u>, did not yield any result. Please try another search input.",
             "randomEntry": randomEntry
         })
 
@@ -101,6 +100,8 @@ def createNewEntry(request):
     EmptyForm = NewSearchForm()
     entrylist = util.list_entries()
     randomEntry = random.choice(entrylist) 
+    markdowner = Markdown() 
+
     if request.method == "POST":
         CreatedEntryForm = NewCreateEntryForm(request.POST)
         if CreatedEntryForm.is_valid():
@@ -112,6 +113,7 @@ def createNewEntry(request):
             if checkEntryExistance is None:
                 # save entry submitted via POST request
                 util.save_entry(createdEntryTitle, createdEntryContent)
+                createdEntryContent = markdowner.convert(createdEntryContent)
                 return render(request, "encyclopedia/entry.html", {
                     "entryTitle": createdEntryTitle,
                     "entryContent": createdEntryContent,
@@ -149,11 +151,13 @@ def editEntry(request, entryTitle):
     randomEntry = random.choice(entrylist) 
     entryContent = util.get_entry(entryTitle)
     EmptyForm = NewSearchForm()
+    markdowner = Markdown() 
+
     if request.method == "POST":
             print(request.POST)
             editedcontent = request.POST["editedContent"] 
             util.save_entry(entryTitle, editedcontent)
-            
+            editedcontent = markdowner.convert(editedcontent)
             return render(request, "encyclopedia/entry.html", {
                 "entryTitle": entryTitle,
                 "entryContent": editedcontent,

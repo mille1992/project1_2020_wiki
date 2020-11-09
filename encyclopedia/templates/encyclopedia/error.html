@@ -6,8 +6,6 @@
 
 {% block body %}
 
-{% autoescape off %}
-    {{ errorMessage}}
-{% endautoescape %}
+        {{ errorMessage|safe}}
 
 {% endblock %}
