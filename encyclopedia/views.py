@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django import forms
 from . import util
+import random
 
 
 class NewSearchForm(forms.Form):
@@ -23,6 +24,8 @@ class NewEditForm(forms.Form):
 
 def index(request):
     EmptyForm = NewSearchForm()
+    entrylist = util.list_entries()
+    randomEntry = random.choice(entrylist) 
     # if the page is called from the Search form
     if request.method == "POST":
         # get form data
@@ -37,7 +40,8 @@ def index(request):
                 return render(request, "encyclopedia/entry.html", {
                     "entryTitle": searchInput,
                     "entryContent": content,
-                    "form": EmptyForm
+                    "form": EmptyForm,
+                    "randomEntry": randomEntry
                 })
             # if search input has not an exact or no entry match
             else:
@@ -47,46 +51,56 @@ def index(request):
                 if matchedEntries is not None:
                     return render(request, "encyclopedia/index.html", {
                         "entries": matchedEntries,
-                        "form": EmptyForm
+                        "form": EmptyForm,
+                        "randomEntry": randomEntry
                     })
                 else:
                     return render(request, "encyclopedia/error.html", {
                         "title": searchInput,
                         "form": EmptyForm,
-                        "errorMessage": f" Your search: {{searchInput}}, did not yield any result. Please try another search input."
+                        "errorMessage": f" Your search: {{searchInput}}, did not yield any result. Please try another search input.",
+                        "randomEntry": randomEntry
                     })
         else:
             return render(request, "encyclopedia/index.html", {
                 "entries": util.list_entries(),
-                "form": EmptyForm
+                "form": EmptyForm,
+                "randomEntry": randomEntry
             })
     # if the page is called by any other but a POST request
     else:
         return render(request, "encyclopedia/index.html", {
             "entries": util.list_entries(),
-            "form": EmptyForm
+            "form": EmptyForm,
+            "randomEntry": randomEntry
         })
 
 
 def entry(request, title):
     content = util.get_entry(title)
+    entrylist = util.list_entries()
     EmptyForm = NewSearchForm()
+    randomEntry = random.choice(entrylist) 
     if content is not None:
         return render(request, "encyclopedia/entry.html", {
             "entryTitle": title,
             "entryContent": content,
-            "form": EmptyForm
+            "form": EmptyForm,
+            "randomEntry": randomEntry
         })
     else:
         return render(request, "encyclopedia/error.html", {
             "title": title,
             "form": EmptyForm,
-            "errorMessage": f" Your search: {{title}}, did not yield any result. Please try another search input."
+            "errorMessage": f" Your search: {{title}}, did not yield any result. Please try another search input.",
+            "randomEntry": randomEntry
         })
 
 
 def createNewEntry(request):
     EmptyForm = NewSearchForm()
+    entrylist = util.list_entries()
+    randomEntry = random.choice(entrylist) 
     if request.method == "POST":
         CreatedEntryForm = NewCreateEntryForm(request.POST)
         if CreatedEntryForm.is_valid():
@@ -101,47 +115,66 @@ def createNewEntry(request):
                 return render(request, "encyclopedia/entry.html", {
                     "entryTitle": createdEntryTitle,
                     "entryContent": createdEntryContent,
-                    "form": EmptyForm
+                    "form": EmptyForm,
+                    "randomEntry": randomEntry
                 })
             # if entry does exist already, render error message
             else:
                 return render(request, "encyclopedia/error.html", {
                     "title": "Saving unsuccessful",
                     "form": EmptyForm,
-                    "errorMessage": f"The entry <i><b>{createdEntryTitle}</i></b> already exists. Please go to that entry and edit it instead."
+                    "errorMessage": f"The entry <i><b>{createdEntryTitle}</i></b> already exists. Please go to that entry and edit it instead.",
+                    "randomEntry": randomEntry
                 })
         # if form data is not valid
         else:
             return render(request, "encyclopedia/error.html", {
                 "title": "Saving unsuccessful",
                 "form": EmptyForm,
-                "errorMessage": f" Your entry could not be saved"
+                "errorMessage": f" Your entry could not be saved",
+                "randomEntry": randomEntry
             })
     # if request method is not POST, render a templated to input a new entry
     else:
         CreateEntryForm = NewCreateEntryForm()
         return render(request, "encyclopedia/createEntry.html", {
             "entryForm": CreateEntryForm,
-            "form": EmptyForm
+            "form": EmptyForm,
+            "randomEntry": randomEntry
         })
 
 
 def editEntry(request, entryTitle):
+    entrylist = util.list_entries()
+    randomEntry = random.choice(entrylist) 
     entryContent = util.get_entry(entryTitle)
     EmptyForm = NewSearchForm()
-
-    # if entry exists edit it else error
-    if entryContent is not None:
-        return render(request, "encyclopedia/editEntry.html", {
-            "entryTitle": entryTitle,
-            "entryContent": entryContent,
-            "form": EmptyForm
-        })
+    if request.method == "POST":
+            print(request.POST)
+            editedcontent = request.POST["editedContent"] 
+            util.save_entry(entryTitle, editedcontent)
+            
+            return render(request, "encyclopedia/entry.html", {
+                "entryTitle": entryTitle,
+                "entryContent": editedcontent,
+                "form": EmptyForm,
+                "randomEntry": randomEntry
+            })
     else:
-        return render(request, "encyclopedia/error.html", {
-            "title": "Entry not found",
-            "form": EmptyForm,
-            "errorMessage": f" The entry you are trying to edit could no tbe found"
-        })    
-    
+        # if entry exists edit it else error
+        if entryContent is not None:
+            return render(request, "encyclopedia/editEntry.html", {
+                "entryTitle": entryTitle,
+                "entryContent": entryContent,
+                "form": EmptyForm,
+                "randomEntry": randomEntry
+            })
+        else:
+            return render(request, "encyclopedia/error.html", {
+                "title": "Entry not found",
+                "form": EmptyForm,
+                "errorMessage": f" The entry you are trying to edit could no tbe found",
+                "randomEntry": randomEntry
+            })    
+        
 
